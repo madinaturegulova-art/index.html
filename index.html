@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parabola Quest</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f1efff;--card:#fff;--tx:#1b1d4d;--mu:#585c92;--bd:#d9d6f5;--pl0:#35e0c5;--pl1:#ffc247;--pl2:#ff6f9c;--ok:#0b7a4b;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1031;--card:#181c4a;--tx:#eceeff;--mu:#a2a8e0;--bd:#2e3379;--ok:#5ee6a0;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0d1031;--card:#181c4a;--tx:#eceeff;--mu:#a2a8e0;--bd:#2e3379;--ok:#5ee6a0;--bad:#ff8a80}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.l0{--pl:var(--pl0)}.l1{--pl:var(--pl1)}.l2{--pl:var(--pl2)}
+main{max-width:640px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{font:700 26px/1 Fredoka,system-ui,sans-serif;margin:0;letter-spacing:.2px}
+.score{font:700 16px Fredoka,system-ui,sans-serif;background:var(--card);border:2px solid var(--bd);border-radius:99px;padding:4px 12px}
+#worlds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+#worlds button{border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:8px 4px;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.2;transition:transform .15s}
+#worlds button:active{transform:scale(.96)}
+#worlds button.on{background:var(--c);border-color:var(--c);color:#14173f}
+#worlds b{font:700 15px Fredoka,system-ui,sans-serif}#worlds small{font-size:12px}
+#worlds .en{font-size:22px}#worlds .st{font-size:12px;letter-spacing:1px}
+.stage{background:#12163f;border-radius:20px;padding:10px;margin-bottom:12px;border:2px solid var(--bd)}
+.stage svg{width:100%;height:auto;display:block}
+#ctl{color:#dfe2ff;font-size:14px;padding:4px 6px 2px}
+#ctl input{width:100%;accent-color:var(--pl);min-width:0}
+.curve{fill:none;stroke:var(--pl);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1}
+.curve.anim{animation:dr 1.3s ease-out}
+@keyframes dr{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.curve.anim{animation:none}}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:18px;padding:14px;margin-bottom:12px}
+.tag{color:var(--mu);font-size:14px;margin:0 0 6px;font-weight:600}
+.eq{font:500 15px "JetBrains Mono",ui-monospace,Menlo,monospace;background:var(--bg);padding:6px 10px;border-radius:10px;display:inline-block;max-width:100%;overflow-x:auto;border-left:4px solid var(--pl)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+input[type=text]{flex:1;min-width:110px;padding:11px;border:2px solid var(--bd);border-radius:12px;background:var(--bg);color:var(--tx);font:inherit}
+.btn{padding:10px 14px;border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
+.btn.p{background:var(--pl);border-color:var(--pl);color:#14173f}
+.btn:disabled{opacity:.5}
+button:focus-visible,input:focus-visible{outline:3px solid var(--pl);outline-offset:2px}
+.hint{border-left:4px solid var(--pl);padding:2px 0 2px 10px;margin:8px 0}
+.worth{color:var(--mu);font-size:14px}
+.fb{margin-top:10px;font-weight:700}.ok{color:var(--ok)}.bad{color:var(--bad)}
+ol{margin:6px 0;padding-left:20px}
+</style>
+</head>
+<body class="l0">
+<main>
+<header><h1>Parabola Quest</h1><div class="score" id="score"></div></header>
+<nav id="worlds"></nav>
+<section class="stage"><svg id="plot" viewBox="0 0 360 210" role="img" aria-label="Graph of the current problem"></svg><div id="ctl"></div></section>
+<section class="card" id="prob"></section>
+<section class="card" id="work">
+ <div id="steps"></div>
+ <div id="hints"></div>
+ <div class="row"><button class="btn" id="hb" onclick="hint()"></button><span class="worth" id="worth"></span></div>
+ <div class="row"><input type="text" id="a" inputmode="decimal" placeholder="Your answer" aria-label="Your answer"><button class="btn p" onclick="check()">Check answer</button></div>
+ <div class="fb" id="fb" aria-live="polite"></div><div id="sol"></div>
+</section>
+</main>
+<script>
+const L=[
+{n:"Level 1",t:"Foundation",e:"🏃",sp:"🏃",ctx:"Platformer jump",
+ p:"Your hero leaps off a platform 5 m high. His height (m) after t seconds is: ",eq:"h(t) = −t² + 4t + 5",q:"After how many seconds does he land (h = 0)?",
+ f:x=>-x*x+4*x+5,x0:0,x1:5.6,y0:0,y1:10,tx:1,ty:2,xl:"t (s)",yl:"h (m)",hy:null,marks:[[0,5,"start"]],hit:()=>[5,0,"lands at t = 5"],end:()=>5,
+ hints:["Landing means h(t) = 0. Multiply both sides by −1: t² − 4t − 5 = 0.","Write down the coefficients: a = 1, b = −4, c = −5."],
+ steps:["Set up the equation t² − 4t − 5 = 0.","Discriminant: D = b² − 4ac = 16 + 20 = 36.","D > 0, so there are two roots: t = (4 ± 6)/2.","We get t₁ = 5 and t₂ = −1.","Time can't be negative, so t = 5."],
+ sol:"t = 5 s. Vieta check: t₁ + t₂ = 4 and t₁·t₂ = −5 ✓.",ans:5,wrong:{"-1":"That's the other root, but time can't be negative. Pick the one that makes sense."}},
+{n:"Level 2",t:"Standard",e:"🚤",sp:"🚤",ctx:"Motion: a boat on a river",
+ p:"A boat travels 24 km downstream and 24 km upstream in 5 hours total. The current's speed is 2 km/h. ",eq:"24/(v+2) + 24/(v−2) = 5",q:"Find the boat's own speed v (km/h).",
+ f:x=>24/(x+2)+24/(x-2),x0:3,x1:16,y0:0,y1:12,tx:4,ty:3,xl:"v (km/h)",yl:"total time (h)",hy:5,hl:"5 h",marks:[],hit:()=>[10,5,"v = 10 km/h"],end:()=>10,
+ hints:["Time = distance / speed. What are the downstream and upstream speeds?","Bring the fractions to the common denominator (v+2)(v−2) to get a quadratic equation."],
+ steps:[],
+ sol:"24(v−2) + 24(v+2) = 5(v²−4) → 5v² − 48v − 20 = 0. D = 2304 + 400 = 2704 = 52². v = (48 ± 52)/10: v = 10 or v = −0.4 (rejected). Answer: 10 km/h. Check: 24/12 + 24/8 = 2 + 3 = 5 ✓.",ans:10,wrong:{"-0.4":"Speed can't be negative. Check your roots.","5":"Check: at v = 5 the total time is not 5 hours. Re-check your equation."}},
+{n:"Level 3",t:"Advanced",e:"🚀",sp:"🚀",ctx:"Engineering: cannon and tower",
+ p:"A projectile is launched straight up at v m/s: ",eq:"h(t) = −5t² + v·t",q:"A tower is 20 m tall. What is the minimum speed v for the projectile to reach a height of 20 m at least once? Then use the slider: how many such moments are there at v = 25?",
+ f:(x,v)=>-5*x*x+v*x,x0:0,x1:6,y0:0,y1:50,tx:1,ty:10,xl:"t (s)",yl:"h (m)",hy:20,hl:"tower 20 m",marks:[],hit:()=>[2,20,"just touches the tower"],end:v=>v/5,
+ hints:["The question becomes: for which v does the equation h(t) = 20 have a solution?","Write 5t² − v·t + 20 = 0. Whether roots exist depends on the discriminant, which contains the parameter v."],
+ steps:[],
+ sol:"5t² − vt + 20 = 0, D = v² − 400. Roots exist when D ≥ 0, i.e. v ≥ 20 (v > 0). At v = 20 there is one moment (the peak), at v > 20 two (going up and coming down), at v < 20 none. At v = 25: D = 225 > 0 → 2 moments. Answer: v_min = 20 m/s. Meaning: the peak height v²/20 must be at least 20.",ans:20,wrong:{"400":"400 is the value of v² where D = 0. You need v itself."}}
+];
+const S=L.map(()=>({h:0,sh:0,done:0,hit:0,stars:0}));
+let cur=0,V=15,fx=0,raf=0;
+const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $=id=>document.getElementById(id);
+const W=360,H=210,M={l:34,r:12,t:14,b:30};
+const sx=x=>{const l=L[cur];return M.l+(x-l.x0)/(l.x1-l.x0)*(W-M.l-M.r)};
+const sy=y=>{const l=L[cur];return H-M.b-(y-l.y0)/(l.y1-l.y0)*(H-M.t-M.b)};
+const stars=n=>"★".repeat(n)+"☆".repeat(3-n);
+function refresh(){
+ $("score").textContent="⭐ "+S.reduce((a,s)=>a+s.stars,0)+" / 9";
+ $("worlds").innerHTML=L.map((l,i)=>`<button class="${i==cur?"on":""}" style="--c:var(--pl${i})" onclick="go(${i})" aria-pressed="${i==cur}"><span class="en">${l.e}</span><b>${l.n}</b><small>${l.t}</small><span class="st">${stars(S[i].stars)}</span></button>`).join("");
+}
+function draw(anim){
+ const l=L[cur],s=S[cur];let g="",d="",pen=false;fx=null;
+ for(let t=Math.ceil(l.x0/l.tx)*l.tx;t<=l.x1;t+=l.tx)g+=`<line x1="${sx(t)}" x2="${sx(t)}" y1="${M.t}" y2="${H-M.b}" stroke="rgba(255,255,255,.09)"/><text x="${sx(t)}" y="${H-M.b+13}" text-anchor="middle" font-size="9" fill="#aab0e8">${t}</text>`;
+ for(let t=l.y0;t<=l.y1;t+=l.ty)g+=`<line x1="${M.l}" x2="${W-M.r}" y1="${sy(t)}" y2="${sy(t)}" stroke="rgba(255,255,255,.09)"/><text x="${M.l-5}" y="${sy(t)+3}" text-anchor="end" font-size="9" fill="#aab0e8">${t}</text>`;
+ g+=`<text x="${W-M.r}" y="${H-4}" text-anchor="end" font-size="9" fill="#aab0e8">${l.xl}</text><text x="${M.l}" y="9" font-size="9" fill="#aab0e8">${l.yl}</text>`;
+ if(l.hy!=null)g+=`<line x1="${M.l}" x2="${W-M.r}" y1="${sy(l.hy)}" y2="${sy(l.hy)}" stroke="#fff" stroke-dasharray="4 4" opacity=".6"/><text x="${W-M.r-2}" y="${sy(l.hy)-4}" text-anchor="end" font-size="10" fill="#fff">${l.hl}</text>`;
+ for(let i=0;i<=240;i++){const x=l.x0+(l.x1-l.x0)*i/240,y=l.f(x,V);if(y>=l.y0&&y<=l.y1){d+=(pen?"L":"M")+sx(x).toFixed(1)+" "+sy(y).toFixed(1);pen=true;if(fx==null)fx=x}else pen=false}
+ g+=`<path class="curve${anim&&!RM?" anim":""}" pathLength="1" d="${d}"/>`;
+ l.marks.forEach(m=>g+=`<circle cx="${sx(m[0])}" cy="${sy(m[1])}" r="4" fill="#fff"/><text x="${sx(m[0])+7}" y="${sy(m[1])-6}" font-size="10" fill="#fff">${m[2]}</text>`);
+ let px=fx,py=l.f(fx,V);
+ if(s.hit){const h=l.hit();g+=`<circle cx="${sx(h[0])}" cy="${sy(h[1])}" r="5" fill="var(--pl)" stroke="#fff" stroke-width="2"/><text x="${sx(h[0])}" y="${sy(h[1])-12}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${h[2]}</text>`;px=h[0];py=h[1]}
+ g+=`<text id="sp" x="${sx(px)}" y="${sy(py)-6}" font-size="20" text-anchor="middle">${l.sp}</text>`;
+ $("plot").innerHTML=g;
+ if(cur==2){const D=V*V-400;$("ro").textContent=`v = ${V} m/s · peak ${(V*V/20).toFixed(1)} m · `+(D>0?"hits the tower twice":D==0?"touches the tower once":"misses the tower")}
+}
+function fly(){
+ cancelAnimationFrame(raf);const l=L[cur],b=l.end(V),a=fx,sp=$("sp");
+ const put=x=>{sp.setAttribute("x",sx(x));sp.setAttribute("y",sy(l.f(x,V))-6)};
+ const fin=()=>{S[cur].hit=1;draw(false);refresh()};
+ if(RM){fin();return}
+ let t0=null;
+ const step=ts=>{if(t0==null)t0=ts;const k=Math.min(1,(ts-t0)/1800),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;put(a+(b-a)*e);k<1?raf=requestAnimationFrame(step):fin()};
+ raf=requestAnimationFrame(step);
+}
+function go(i){
+ cancelAnimationFrame(raf);cur=i;document.body.className="l"+i;const l=L[i];V=15;
+ $("prob").innerHTML=`<p class="tag">${l.n} · ${l.ctx}</p><p>${l.p}</p><span class="eq">${l.eq}</span><p><b>${l.q}</b></p>`;
+ $("ctl").innerHTML=i==2?`<label>Launch speed v: <input type="range" id="sl" min="10" max="30" step="1" value="${V}" aria-label="Launch speed"></label><div id="ro"></div>`:"";
+ if(i==2)$("sl").oninput=e=>{V=+e.target.value;S[2].hit=0;draw(false)};
+ $("a").value="";$("fb").textContent="";$("sol").innerHTML="";
+ steps();hints();refresh();draw(true);
+ if(S[i].done)showSol();
+}
+function steps(){
+ const l=L[cur],s=S[cur];
+ $("steps").innerHTML=l.steps.length?`<b>Step-by-step breakdown</b><ol>${l.steps.slice(0,s.sh).map(x=>`<li>${x}</li>`).join("")}</ol><button class="btn" onclick="more()" ${s.sh>=l.steps.length?"disabled":""}>Show next step</button>`:"";
+}
+function more(){S[cur].sh++;steps()}
+function hints(){
+ const l=L[cur],s=S[cur];
+ $("hints").innerHTML=l.hints.slice(0,s.h).map(x=>`<div class="hint">💡 ${x}</div>`).join("");
+ $("hb").disabled=s.h>=l.hints.length;$("hb").textContent=s.h?"Another hint":"Get a hint";
+ $("worth").textContent="Worth "+stars(Math.max(1,3-s.h));
+}
+function hint(){S[cur].h++;hints()}
+function showSol(){$("sol").innerHTML=`<div class="hint"><b>Solution</b><br>${L[cur].sol}</div>`}
+function check(){
+ const l=L[cur],s=S[cur],v=parseFloat($("a").value.trim().replace(",",".")),fb=$("fb");
+ if(isNaN(v)){fb.className="fb bad";fb.textContent="Enter a number to check.";return}
+ if(Math.abs(v-l.ans)<1e-9){
+  if(!s.done){s.done=1;s.stars=Math.max(1,3-s.h)}
+  fb.className="fb ok";fb.textContent="Correct! You earned "+s.stars+" ★";showSol();refresh();
+  if(cur==2){V=20;$("sl").value=20}
+  s.hit=0;draw(false);fly();
+ }else{fb.className="fb bad";fb.textContent=l.wrong[String(v)]||"Not yet. Take a hint and try again."}
+}
+$("a").addEventListener("keydown",e=>{if(e.key=="Enter")check()});
+go(0);
+</script>
+</body>
+</html>
